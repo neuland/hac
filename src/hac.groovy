@@ -11,7 +11,8 @@ def cli = new CliBuilder(usage: "${this.class.name}.groovy --env <live> -f <my-s
 cli.with {
     h longOpt: 'help', 'Show usage information'
     e longOpt: 'env', args: 1, argName: 'env', required: true, 'enviroment'
-    f longOpt: 'file', args: 1, argName: 'file', required: true, 'file containing the script'
+    i longOpt: 'file', args: 1, argName: 'file', required: false, 'file containing the script'
+    t longOpt: 'type', args: 1, argName: 'type', required: false, 'specify the input type [groovy|flex]'
 }
 def options = cli.parse(args)
 if (options == null) {
@@ -23,10 +24,11 @@ if (options == null) {
 
 def config = new JsonSlurper().parse(new File(System.getProperty("user.home"), '.hac/config.json').toURI().toURL())
 
+def serverList = getServerList(config, options)
+def script = getScript(options)
+def type = getType(options)
 def username = getUsername(config, options)
 def password = getPassword(config, options)
-def serverList = getServerList(config, options)
-def file = getFile(options)
 
 serverList.each { serverUrl ->
     println "-------------------------------------------------------------------------------"
@@ -35,20 +37,23 @@ serverList.each { serverUrl ->
 
     def hAC = new RESTClient(serverUrl)
     hAC.headers['Authorization'] = 'Basic ' + "${username}:${password}".getBytes('iso-8859-1').encodeBase64()
-    if (file.name.endsWith('.groovy')) {
-        executeGroovy(hAC, file)
-    } else if (file.name.endsWith('.flex')) {
-        executeFlexSearch(hAC, file)
-    } else {
-        println "Unkown file ending for file ${file.name}"
+    switch (type) {
+        case 'groovy':
+            executeGroovy(hAC, script)
+            break
+        case 'flex':
+            executeFlexSearch(hAC, script)
+            break
+        default:
+            println "unknown type $type"
     }
 }
 
-private void executeGroovy(RESTClient hAC, file) {
+private void executeGroovy(RESTClient hAC, script) {
     hAC.request(Method.POST) { req ->
         uri.path = '/console/groovy/execute'
         requestContentType = URLENC
-        body = ['script'  : file.text,
+        body = ['script'  : script,
                 'maxCount': 200]
 
         response.success = { resp, json ->
@@ -71,11 +76,11 @@ private void executeGroovy(RESTClient hAC, file) {
     }
 }
 
-private void executeFlexSearch(RESTClient hAC, file) {
+private void executeFlexSearch(RESTClient hAC, script) {
     hAC.request(Method.POST) { req ->
         uri.path = '/console/flexsearch/execute'
         requestContentType = URLENC
-        body = ['flexibleSearchQuery': file.text]
+        body = ['flexibleSearchQuery': script]
 
         response.success = { resp, json ->
             println "Execution time: ${json.executionTime}ms"
@@ -88,8 +93,8 @@ private void executeFlexSearch(RESTClient hAC, file) {
             if (json.headers) {
                 def headerRow = new StringBuffer()
                 json.headers.eachWithIndex { header, idx ->
-                    columnWidth[idx] = [header.size(), json.resultList.collect{row -> row[idx]?.toString()?.size()}.max()].max()
-                    headerRow << header.padRight(columnWidth[idx]+1)
+                    columnWidth[idx] = [header.size(), json.resultList.collect { row -> row[idx]?.toString()?.size() }.max()].max()
+                    headerRow << header.padRight(columnWidth[idx] + 1)
                 }
                 println headerRow
             }
@@ -97,7 +102,7 @@ private void executeFlexSearch(RESTClient hAC, file) {
                 json.resultList.each { row ->
                     def rowOutput = new StringBuffer()
                     row.eachWithIndex { column, idx ->
-                        rowOutput << (column?column:'').padRight(columnWidth[idx]+1)
+                        rowOutput << (column ? column : '').padRight(columnWidth[idx] + 1)
                     }
                     println rowOutput
                 }
@@ -127,6 +132,21 @@ private def getServerList(config, options) {
     config[options.env].server
 }
 
-private def getFile(OptionAccessor options) {
-    new File(options.file)
+private def getScript(OptionAccessor options) {
+    new File(options.file).text
+}
+
+private def getType(OptionAccessor options) {
+    if (options.type) {
+        return options.type
+    } else {
+        def file = new File(options.file)
+        if (file.name.endsWith('.groovy')) {
+            return 'groovy'
+        } else if (file.name.endsWith('.flex')) {
+            return 'flex'
+        } else {
+            println "Unkown file ending for file ${file.name}"
+        }
+    }
 }
