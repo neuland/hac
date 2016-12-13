@@ -4,6 +4,8 @@ hybris Administrator Console
 ## Installation
 To use the config completion, https://stedolan.github.io/jq/ has to be installed.
 
+Clone the repository.
+
 Run ./setup.sh to set up the system:
  - a .hac directory will be created in your home dir
  - there will be links set up in that directory to the files in the checkout out repository
