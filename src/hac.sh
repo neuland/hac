@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-DIRNAME=`dirname "$(readlink -f "$0")"`
-groovy $DIRNAME/hac.groovy --env $1 --file $2
+groovy ~/.hac/hac.groovy --env $1 --file $2
