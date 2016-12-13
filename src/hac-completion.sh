@@ -4,8 +4,7 @@ _hac()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-#    opts=`grep '^ *"[a-zA-Z0-9]\+": *{' ~/.hac/config.json | sed -e 's/.*"\(.*\)".*/\1/' | tr '\n' ' '}`
-    opts=`jq -cr 'keys' ~/.hac/config.json | sed -e 's/\(\["\|","\|"\]\)/ /g'`
+    opts=`jq -cr 'keys' ~/.hac/config.json | perl -p -e 's/(\["|","|"\])/ /g'`
     if [[ "$prev" != "hac" ]] ; then
         _filedir
     else
