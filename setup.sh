@@ -3,7 +3,11 @@
 BASE_DIR=~/.hac
 REPO_DIR=$(pwd)/src
 BIN_DIR=/usr/local/bin
+
+# If you're on a mac, please install bash_completion first, then adjust the directory
+# COMPLETION_DIR=/usr/local/etc/bash_completion.d
 COMPLETION_DIR=/etc/bash_completion.d
+
 
 COMPLETION_FILE=hac-completion.sh
 GROOVY_FILE=hac.groovy
@@ -17,7 +21,7 @@ CONFIG_FILE=config.json
 [[ -L "$BASE_DIR/$GROOVY_FILE" ]]     || ln -s "$REPO_DIR/$GROOVY_FILE" "$BASE_DIR"
 [[ -f "$BASE_DIR/$CONFIG_FILE" ]]     || cp "$REPO_DIR/$CONFIG_FILE" "$BASE_DIR"
 
-[[ -L "$COMPLETION_DIR/$COMPLETION_FILE" ]] || sudo ln -s "$BASE_DIR/$COMPLETION_FILE" "$COMPLETION_DIR"
+[[ -L "$COMPLETION_DIR/$COMPLETION_FILE" ]] || sudo ln -s "$BASE_DIR/$COMPLETION_FILE" "$COMPLETION_DIR/$COMPLETION_FILE"
 [[ -L "$BIN_DIR/hac" ]]                     || sudo ln -s "$BASE_DIR/$SHELL_WRAPPER" "$BIN_DIR/hac"
 
 echo "Please source the following config file to use completion in this session."

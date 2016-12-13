@@ -1,10 +1,15 @@
 # hac
 hybris Administrator Console
 
-## Installation
-To use the config completion, https://stedolan.github.io/jq/ has to be installed.
+## Dependencies
+ - 'jq' (https://stedolan.github.io/jq/) and 'perl' to parse the config file
+ - 'bash-completion' to allow bash completion ;)
 
-Clone the repository.
+## Installation
+Clone this repository.
+
+If you are using a mac, please make sure that you have 'bash-completion' installed.
+Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
 
 Run ./setup.sh to set up the system:
  - a .hac directory will be created in your home dir
