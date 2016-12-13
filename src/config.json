@@ -1,0 +1,28 @@
+{
+  "local": {
+    "username": "admin",
+    "password": "admin",
+    "server": [
+      "http://localhost:9001"
+    ]
+  },
+  "dev": {
+    "username": "my-dev-user",
+    "server": [
+      "http://my-dev-server:9001"
+    ]
+  },
+  "live": {
+    "username": "my-live-user",
+    "server": [
+      "https://my-live-node-01"
+    ]
+  },
+  "live-all": {
+    "username": "my-live-user",
+    "server": [
+      "https://my-live-node-01",
+      "https://my-live-node-02"
+    ]
+  }
+}
