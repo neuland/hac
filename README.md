@@ -11,7 +11,7 @@ Clone this repository.
 If you are using a mac, please make sure that you have 'bash-completion' installed.
 Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
 
-Run ./setup.sh to set up the system:
+Run ./setup.sh to set up the system: (only run ./setup.sh, _don't use_ 'sudo ./setup.sh', that would use 'root's home directory!)
  - a .hac directory will be created in your home dir
  - there will be links set up in that directory to the files in the checkout out repository
  - there will be a link set up in /usr/local/bin
