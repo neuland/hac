@@ -12,5 +12,8 @@ Run ./setup.sh to set up the system:
  - there will be a link set up in /usr/local/bin
  - there will be a link for the bash completion under /etc/bash_completion.d/
 
+The last two actions need root access, so the setup script will use 'sudo'.
+Please have a look at the script _before running it_ to make sure that nothing bad will happen ;)
+
 ## Usage
 hac local my-script.groovy
