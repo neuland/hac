@@ -7,8 +7,30 @@ Command Line Interface for hybris Administrator Console
 - Use of bash completion to find configured enviroments
 
 # Usage
+## groovy
 ```
     hac local test/test.groovy
+    -------------------------------------------------------------------------------
+    https://my-server
+    -------------------------------------------------------------------------------
+    Result: Groovy Rocks!
+
+    Output
+    ------
+    org.springframework.security.filterChains
+    org.springframework.security.filterChainProxy
+    org.springframework.security.web.DefaultSecurityFilterChain#0
+```
+## flex serarch
+```
+    hac local test/test.flex
+    -------------------------------------------------------------------------------
+    https://my-server
+    -------------------------------------------------------------------------------
+    Execution time: 15ms
+    HJMPTS PK               TYPEPKSTRING      OWNERPKSTRING CREATEDTS               ACLTS MODIFIEDTS              PROPTS ACTIVEFLAG ISOCODE 
+    124    9014067975342480 23087816810119820               2000-08-08 17:37:17.594 0     2015-12-23 10:34:35.814 0      1          de      
+    33     9014067975342624 23087816810119820               2000-08-08 17:37:17.602 0     2015-12-23 10:34:35.864 0      1          en      
 ```
 
 # Installation
