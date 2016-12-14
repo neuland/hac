@@ -39,18 +39,20 @@ Command Line Interface for hybris Administrator Console
 
 # Installation
 ## Dependencies for execution
- - groovy
+ - groovy (http://groovy-lang.org/)
  
 ## Dependencies for bash completion
- - 'jq' (https://stedolan.github.io/jq/) 
- - 'perl' to parse the config file
+ - jq (https://stedolan.github.io/jq/) 
+ - perl (https://www.perl.org/)
  - 'bash-completion' to allow bash completion ;)
-
-## Steps to do
-Clone this repository.
 
 If you are using a mac, please make sure that you have 'bash-completion' installed.
 Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
+
+## Steps to do
+```
+    https://github.com/neuland/hac.git
+```
 
 Run ./setup.sh to set up the system: (only run ./setup.sh, _don't use_ 'sudo ./setup.sh', that would use 'root's home directory!)
  - a .hac directory will be created in your home dir
@@ -60,6 +62,3 @@ Run ./setup.sh to set up the system: (only run ./setup.sh, _don't use_ 'sudo ./s
 
 The last two actions need root access, so the setup script will use 'sudo'.
 Please have a look at the script _before running it_ to make sure that nothing bad will happen ;)
-
-## Usage
-hac local my-script.groovy
