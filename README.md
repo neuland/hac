@@ -1,11 +1,26 @@
-# hac
-hybris Administrator Console
+# Introduction
+Command Line Interface for hybris Administrator Console
+- Execute groovy scripts via command line.
+- Execute flex search queries via command line.
+- Manage a list of hybris servers grouped by enviroment / stage.
+- Execute scripte on multiple servers with one statement
+- Use of bash completion to find configured enviroments
 
-## Dependencies
- - 'jq' (https://stedolan.github.io/jq/) and 'perl' to parse the config file
+# Usage
+```
+    hac local test/test.groovy
+```
+
+# Installation
+## Dependencies for execution
+ - groovy
+ 
+## Dependencies for bash completion
+ - 'jq' (https://stedolan.github.io/jq/) 
+ - 'perl' to parse the config file
  - 'bash-completion' to allow bash completion ;)
 
-## Installation
+## Steps to do
 Clone this repository.
 
 If you are using a mac, please make sure that you have 'bash-completion' installed.
