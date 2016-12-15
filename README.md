@@ -2,12 +2,13 @@
 Command Line Interface for hybris Administrator Console
 - Execute groovy scripts via command line.
 - Execute flex search queries via command line.
+- Use the UNIX pipe system for preprocessing.
 - Manage a list of hybris servers grouped by enviroment / stage.
 - Execute scripte on multiple servers with one statement
 - Use of bash completion to find configured enviroments
 
 # Usage
-## groovy
+## Groovy
 ```
     hac local test/test.groovy
 ```
@@ -23,7 +24,7 @@ Command Line Interface for hybris Administrator Console
     org.springframework.security.filterChainProxy
     org.springframework.security.web.DefaultSecurityFilterChain#0
 ```
-## flex serarch
+## Flexserarch
 ```
     hac local test/test.flex
 ```
@@ -35,6 +36,13 @@ Command Line Interface for hybris Administrator Console
     HJMPTS PK               TYPEPKSTRING      OWNERPKSTRING CREATEDTS               ACLTS MODIFIEDTS              PROPTS ACTIVEFLAG ISOCODE 
     124    9014067975342480 23087816810119820               2000-08-08 17:37:17.594 0     2015-12-23 10:34:35.814 0      1          de      
     33     9014067975342624 23087816810119820               2000-08-08 17:37:17.602 0     2015-12-23 10:34:35.864 0      1          en      
+```
+## Piping
+```
+    cat test/test.flex | hac local --type flex
+```
+```
+    cat test/test.groovy | hac local --type groovy
 ```
 
 # Installation
