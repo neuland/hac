@@ -1,0 +1,3 @@
+"#% impex.setTargetFile( ""language.csv"" , true );"
+UPDATE Language;pk[unique=true]
+"#% impex.exportItems(""SELECT {pk} FROM {Language}"", Collections.EMPTY_MAP, Collections.singletonList( Item.class ), true, true, -1, -1 );"

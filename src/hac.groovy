@@ -44,6 +44,9 @@ serverList.each { serverUrl ->
         case 'flex':
             executeFlexSearch(hAC, script)
             break
+        case 'export':
+            executeExport(hAC, script)
+            break
         default:
             println "unknown type $type"
     }
@@ -116,6 +119,38 @@ private void executeFlexSearch(RESTClient hAC, script) {
     }
 }
 
+private void executeExport(RESTClient hAC, script) {
+    hAC.request(Method.POST) { req ->
+        uri.path = '/console/impex/export'
+        requestContentType = URLENC
+        body = ['scriptContent'  : script,
+                'validationEnum': 'EXPORT_ONLY',
+                'encoding': 'UTF-8']
+
+        response.success = { resp, xml ->
+            def error = xml.depthFirst().find { it.@id == 'impexResult' && it['@data-level'] == "error"}
+            if (error) {
+                println error['@data-result']
+            } else {
+                def pathToResultFile = xml.depthFirst().find { it.name() == 'DIV' && it.@id == 'downloadExportResultData'}.children().@href.text()
+                URI resultURI = hAC.defaultURI.toURI().resolve(pathToResultFile)
+
+                def filename = resultURI.query.tokenize('&').collect() { it.tokenize('=') }.grep{ it[0] == 'realname'}.flatten()[1]
+                new File(filename).withOutputStream { out ->
+                    out << resultURI.toURL().openStream()
+                }
+
+                println "Result: ${filename}"
+            }
+        }
+
+        response.failure = { resp, body ->
+            println "request failed $body"
+            assert resp.status >= 400
+        }
+    }
+}
+
 private def getUsername(config, options) {
     config[options.env].username
 }
@@ -141,10 +176,12 @@ private def getType(OptionAccessor options) {
         return options.type
     } else {
         def file = new File(options.file)
-        if (file.name.endsWith('.groovy')) {
+        if (file.name.toLowerCase().endsWith('.groovy')) {
             return 'groovy'
-        } else if (file.name.endsWith('.flex')) {
+        } else if (file.name.toLowerCase().endsWith('.flex')) {
             return 'flex'
+        }  else if (file.name.toLowerCase().endsWith('.impex')) {
+            return 'export'
         } else {
             println "Unkown file ending for file ${file.name}"
         }
