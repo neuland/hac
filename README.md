@@ -2,6 +2,7 @@
 Command Line Interface for hybris Administrator Console
 - Execute groovy scripts via command line.
 - Execute flex search queries via command line.
+- Execute impex export via command line and download the resulting file.
 - Use the UNIX pipe system for preprocessing.
 - Manage a list of hybris servers grouped by enviroment / stage.
 - Execute scripte on multiple servers with one statement
@@ -36,6 +37,16 @@ Command Line Interface for hybris Administrator Console
     HJMPTS PK               TYPEPKSTRING      OWNERPKSTRING CREATEDTS               ACLTS MODIFIEDTS              PROPTS ACTIVEFLAG ISOCODE 
     124    9014067975342480 23087816810119820               2000-08-08 17:37:17.594 0     2015-12-23 10:34:35.814 0      1          de      
     33     9014067975342624 23087816810119820               2000-08-08 17:37:17.602 0     2015-12-23 10:34:35.864 0      1          en      
+```
+## ImpEx (Export)
+```
+    hac local test/test.impex
+```
+```
+    -------------------------------------------------------------------------------
+    https://my-server
+    -------------------------------------------------------------------------------
+    Result: dataexport_0000NHJ9.zip
 ```
 ## Piping
 ```
