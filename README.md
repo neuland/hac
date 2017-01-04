@@ -55,6 +55,9 @@ Command Line Interface for hybris Administrator Console
 ```
     cat test/test.groovy | hac local --type groovy
 ```
+```
+    cat test/test.impex | hac local --type impex
+```
 
 # Installation
 ## Dependencies for execution
