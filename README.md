@@ -5,7 +5,7 @@ Command Line Interface for hybris Administrator Console
 - Execute impex export via command line and download the resulting file.
 - Use the UNIX pipe system for preprocessing.
 - Manage a list of hybris servers grouped by enviroment / stage.
-- Execute scripte on multiple servers with one statement
+- Execute scripts on multiple servers with one statement
 - Use of bash completion to find configured enviroments
 
 # Usage
