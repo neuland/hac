@@ -61,7 +61,7 @@ Command Line Interface for hybris Administrator Console
 
 # Installation
 ## Dependencies for execution
- - groovy (http://groovy-lang.org/)
+ - groovy (http://groovy-lang.org/) min. Version 2.4.7
  
 ## Dependencies for bash completion
  - jq (https://stedolan.github.io/jq/) 
