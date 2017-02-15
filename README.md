@@ -76,7 +76,7 @@ Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
     https://github.com/neuland/hac.git
 ```
 
-Run ./setup.sh to set up the system: (only run ./setup.sh, _don't use_ 'sudo ./setup.sh', that would use 'root's home directory!)
+Run ./setup.sh to set up the system: (only run `./setup.sh`, _don't use_ `sudo ./setup.sh`, that would use root's home directory!)
  - a .hac directory will be created in your home dir
  - there will be links set up in that directory to the files in the checkout out repository
  - there will be a link set up in /usr/local/bin
@@ -84,3 +84,5 @@ Run ./setup.sh to set up the system: (only run ./setup.sh, _don't use_ 'sudo ./s
 
 The last two actions need root access, so the setup script will use 'sudo'.
 Please have a look at the script _before running it_ to make sure that nothing bad will happen ;)
+
+Edit the `~/.hac/config` file to match your system configuration.
