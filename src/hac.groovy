@@ -54,7 +54,7 @@ serverList.each { serverUrl ->
 
 private void executeGroovy(RESTClient hAC, script) {
     hAC.request(Method.POST) { req ->
-        uri.path = '/console/groovy/execute'
+        uri.path = 'console/groovy/execute'
         requestContentType = URLENC
         body = ['script'  : script,
                 'maxCount': 200]
@@ -81,7 +81,7 @@ private void executeGroovy(RESTClient hAC, script) {
 
 private void executeFlexSearch(RESTClient hAC, script) {
     hAC.request(Method.POST) { req ->
-        uri.path = '/console/flexsearch/execute'
+        uri.path = 'console/flexsearch/execute'
         requestContentType = URLENC
         body = ['flexibleSearchQuery': script]
 
@@ -121,7 +121,7 @@ private void executeFlexSearch(RESTClient hAC, script) {
 
 private void executeExport(RESTClient hAC, script) {
     hAC.request(Method.POST) { req ->
-        uri.path = '/console/impex/export'
+        uri.path = 'console/impex/export'
         requestContentType = URLENC
         body = ['scriptContent'  : script,
                 'validationEnum': 'EXPORT_ONLY',
