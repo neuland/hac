@@ -85,4 +85,4 @@ Run ./setup.sh to set up the system: (only run `./setup.sh`, _don't use_ `sudo .
 The last two actions need root access, so the setup script will use 'sudo'.
 Please have a look at the script _before running it_ to make sure that nothing bad will happen ;)
 
-Edit the `~/.hac/config` file to match your system configuration.
+Edit the `~/.hac/config.json` file to match your system configuration.
