@@ -8,6 +8,10 @@ Command Line Interface for hybris Administrator Console
 - Execute scripts on multiple servers with one statement
 - Use of bash completion to find configured enviroments
 
+## Tested with hybris version
+
+* 4.8.11
+
 # Usage
 ## Groovy
 ```
