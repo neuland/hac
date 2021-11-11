@@ -1,4 +1,4 @@
-ctx.beanDefinitionNames.each {
+spring.beanDefinitionNames.each {
     println it
 }
 

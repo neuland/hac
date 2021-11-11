@@ -1,12 +1,11 @@
+@Grab(group = 'org.ccil.cowan.tagsoup', module = 'tagsoup', version = '1.2')
+
 import groovy.json.JsonSlurper
-import groovyx.net.http.Method
-import groovyx.net.http.RESTClient
+import groovy.util.slurpersupport.GPathResult
 
-import static groovyx.net.http.ContentType.URLENC
+import javax.net.ssl.*
+import java.security.SecureRandom
 
-@Grapes([
-        @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.7.1')
-])
 def cli = new CliBuilder(usage: "${this.class.name}.groovy --env <live> -f <my-script.groovy>")
 cli.with {
     h longOpt: 'help', 'Show usage information'
@@ -22,131 +21,149 @@ if (options == null) {
     return
 }
 
-def config = new JsonSlurper().parse(new File(System.getProperty("user.home"), '.hac/config.json').toURI().toURL())
+def config = new JsonSlurper().parse(new File('src/config.json').toURI().toURL())
 
 def serverList = getServerList(config, options)
 def script = getScript(options)
 def type = getType(options)
 def username = getUsername(config, options)
 def password = getPassword(config, options)
+def tagsoupParser = new org.ccil.cowan.tagsoup.Parser()
+def slurper = new XmlSlurper(tagsoupParser)
+
+// handle cookies
+cookieManager = new java.net.CookieManager();
+CookieHandler.setDefault(cookieManager);
+cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+
+//bypass SSL cert verification
+def sc = SSLContext.getInstance("SSL")
+def trustAll = [getAcceptedIssuers: {}, checkClientTrusted: { a, b -> }, checkServerTrusted: { a, b -> }]
+sc.init(null, [trustAll as X509TrustManager] as TrustManager[], new SecureRandom())
+hostnameVerifier = [verify: { hostname, session -> true }]
+HttpsURLConnection.defaultSSLSocketFactory = sc.socketFactory
+HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier as HostnameVerifier)
 
 serverList.each { serverUrl ->
     println "-------------------------------------------------------------------------------"
     println serverUrl
     println "-------------------------------------------------------------------------------"
 
-    def hAC = new RESTClient(serverUrl)
-    hAC.headers['Authorization'] = 'Basic ' + "${username}:${password}".getBytes('iso-8859-1').encodeBase64()
+    def connection = loginToHac(serverUrl, username, password)
+    def csrfToken = getCsrfToken(slurper.parseText(connection.inputStream.text))
+
     switch (type) {
         case 'groovy':
-            executeGroovy(hAC, script)
+            executeGroovy(serverUrl, csrfToken, script)
             break
         case 'flex':
-            executeFlexSearch(hAC, script)
+            executeFlexSearch(serverUrl, csrfToken, script)
             break
+
         case 'export':
-            executeExport(hAC, script)
+            executeExport(serverUrl, csrfToken, script)
             break
         default:
             println "unknown type $type"
     }
+
 }
 
-private void executeGroovy(RESTClient hAC, script) {
-    hAC.request(Method.POST) { req ->
-        uri.path = 'console/groovy/execute'
-        requestContentType = URLENC
-        body = ['script'  : script,
-                'maxCount': 200]
+private void executeGroovy(String serverUrl, String csrfToken, script) {
 
-        response.success = { resp, json ->
-            println "Result: ${json.executionResult}"
+    def con = getConnection(serverUrl + '/console/scripting/execute', csrfToken)
 
-            if (json.outputText) {
-                println "\nOutput\n------"
-                println json.outputText
-            }
-            if (json.stacktraceText) {
-                println "\nStacktrace\n----------"
-                println json.stacktraceText
-            }
+    con.outputStream.withWriter { Writer writer ->
+        writer << "script=" + URLEncoder.encode(script, "UTF-8") + "&scriptType=groovy&commit=false"
+    }
+
+    String response = con.inputStream.withReader { Reader reader -> reader.text }
+
+    def jsonSlurper = new JsonSlurper()
+    def json = jsonSlurper.parseText(response)
+
+    if (json.executionResult) {
+        println "\nExecutionResult\n---------------"
+        println json.executionResult
+    }
+    if (json.outputText) {
+        println "\nOutput\n------"
+        println json.outputText
+    }
+    if (json.stacktraceText) {
+        println "\nStacktrace\n----------"
+        println json.stacktraceText
+    }
+}
+
+
+private void executeFlexSearch(String serverUrl, String csrfToken, script) {
+
+    def con = getConnection(serverUrl + '/console/flexsearch/execute', csrfToken)
+
+    con.outputStream.withWriter { Writer writer ->
+        writer << "flexibleSearchQuery=" + URLEncoder.encode(script, "UTF-8") + "&commit=false"
+    }
+
+    String response = con.inputStream.withReader { Reader reader -> reader.text }
+
+    def jsonSlurper = new JsonSlurper()
+    def json = jsonSlurper.parseText(response)
+
+    if (json.exception) {
+        println "\nException\n---------"
+        println json.exception
+    }
+
+    println "Execution time: ${json.executionTime}ms"
+
+    def columnWidth = []
+    if (json.headers) {
+        def headerRow = new StringBuffer()
+        json.headers.eachWithIndex { header, idx ->
+            columnWidth[idx] = [header.size(), json.resultList.collect { row -> row[idx]?.toString()?.size() }.max()].max()
+            headerRow << header.padRight(columnWidth[idx] + 1)
         }
-
-        response.failure = { resp, body ->
-            println "request failed $body"
-            assert resp.status >= 400
+        println headerRow
+    }
+    if (json.resultList) {
+        json.resultList.each { row ->
+            def rowOutput = new StringBuffer()
+            row.eachWithIndex { column, idx ->
+                rowOutput << (column ? column : '').padRight(columnWidth[idx] + 1)
+            }
+            println rowOutput
         }
     }
 }
 
-private void executeFlexSearch(RESTClient hAC, script) {
-    hAC.request(Method.POST) { req ->
-        uri.path = 'console/flexsearch/execute'
-        requestContentType = URLENC
-        body = ['flexibleSearchQuery': script]
+private void executeExport(String serverUrl, String csrfToken, script) {
 
-        response.success = { resp, json ->
-            println "Execution time: ${json.executionTime}ms"
+    def con = getConnection(serverUrl + '/console/impex/export', csrfToken)
 
-            if (json.exception) {
-                println "\nException\n---------"
-                println json.exception
-            }
-            def columnWidth = []
-            if (json.headers) {
-                def headerRow = new StringBuffer()
-                json.headers.eachWithIndex { header, idx ->
-                    columnWidth[idx] = [header.size(), json.resultList.collect { row -> row[idx]?.toString()?.size() }.max()].max()
-                    headerRow << header.padRight(columnWidth[idx] + 1)
-                }
-                println headerRow
-            }
-            if (json.resultList) {
-                json.resultList.each { row ->
-                    def rowOutput = new StringBuffer()
-                    row.eachWithIndex { column, idx ->
-                        rowOutput << (column ? column : '').padRight(columnWidth[idx] + 1)
-                    }
-                    println rowOutput
-                }
-            }
-        }
-
-        response.failure = { resp, body ->
-            println "request failed $body"
-            assert resp.status >= 400
-        }
+    con.outputStream.withWriter { Writer writer ->
+        writer << "scriptContent=" + URLEncoder.encode(script, "UTF-8") + "&validationEnum=EXPORT_ONLY&encoding=UTF-8"
     }
-}
 
-private void executeExport(RESTClient hAC, script) {
-    hAC.request(Method.POST) { req ->
-        uri.path = 'console/impex/export'
-        requestContentType = URLENC
-        body = ['scriptContent'  : script,
-                'validationEnum': 'EXPORT_ONLY',
-                'encoding': 'UTF-8']
+    String response = con.inputStream.withReader { Reader reader -> reader.text }
 
-        response.success = { resp, xml ->
-            def error = xml.depthFirst().find { it.@id == 'impexResult' && it['@data-level'] == "error"}
-            if (error) {
-                println error['@data-result']
-            } else {
-                def pathToResultFile = xml.depthFirst().find { it.name() == 'DIV' && it.@id == 'downloadExportResultData'}.children().@href.text()
-                URI resultURI = hAC.defaultURI.toURI().resolve(pathToResultFile)
+    def slurper = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser())
 
-                def filename = resultURI.query.tokenize('&').collect() { it.tokenize('=') }.grep{ it[0] == 'realname'}.flatten()[1]
-                new File(filename).withOutputStream { out ->
-                    out << resultURI.toURL().openStream()
-                }
+    def xml = slurper.parseText(response)
+    def error = xml.depthFirst().find { it.@id == 'impexResult' && it['@data-level'] == "error" }
+    if (error) {
+        println error['@data-result']
+    } else {
 
-                println "Result: ${filename}"
+        def downloadExportResultData = xml.depthFirst().find { it.@id == 'downloadExportResultData' }.children()
+        def filename = downloadExportResultData.text()
+        def pathToResultFile = downloadExportResultData.@href.text()
+
+        new URL(serverUrl + "/console/impex/" + pathToResultFile).openConnection().with { conn ->
+            new File(filename).withOutputStream { out ->
+                out << conn.inputStream
             }
-        }
-
-        response.failure = { resp, body ->
-            println "request failed $body"
-            assert resp.status >= 400
+            println "Result: ${filename}"
         }
     }
 }
@@ -180,10 +197,46 @@ private def getType(OptionAccessor options) {
             return 'groovy'
         } else if (file.name.toLowerCase().endsWith('.flex')) {
             return 'flex'
-        }  else if (file.name.toLowerCase().endsWith('.impex')) {
+        } else if (file.name.toLowerCase().endsWith('.impex')) {
             return 'export'
         } else {
             println "Unkown file ending for file ${file.name}"
         }
     }
+}
+
+/**
+ * <meta name="_csrf" content="4fed96a3-8267-4449-8d85-76036b1a53c2" />
+ * @return the token string
+ */
+private String getCsrfToken(GPathResult htmlParser) {
+    assert htmlParser instanceof groovy.util.slurpersupport.GPathResult
+    //print htmlParser.head.meta[3].@name
+    return htmlParser.head.'*'.findAll { node ->
+        node.@name == '_csrf'
+    }.@content
+}
+
+private def loginToHac(String serverUrl, username, password) {
+
+    def connection = new URL(serverUrl).openConnection() as HttpURLConnection
+    // set some headers
+    connection.setRequestProperty('Authorization', 'Basic ' + "${username}:${password}".getBytes('iso-8859-1').encodeBase64())
+    assert connection.responseCode == 200
+
+    return connection
+}
+
+private def getConnection(String url, String csrfToken) {
+    def con = new URL(url).openConnection() as HttpURLConnection
+
+    cookieManager?.getCookieStore()?.getCookies().each { cookie ->
+        con.setRequestProperty("Cookie", cookie.getName() + "=" + cookie.getValue());
+    }
+
+    con.setRequestProperty("X-CSRF-TOKEN", csrfToken);
+    con.setRequestMethod("POST");
+    con.setDoOutput(true);
+
+    return con
 }
