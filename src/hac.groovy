@@ -28,8 +28,6 @@ def script = getScript(options)
 def type = getType(options)
 def username = getUsername(config, options)
 def password = getPassword(config, options)
-def tagsoupParser = new org.ccil.cowan.tagsoup.Parser()
-def slurper = new XmlSlurper(tagsoupParser)
 
 // handle cookies
 cookieManager = new java.net.CookieManager();
@@ -50,7 +48,7 @@ serverList.each { serverUrl ->
     println "-------------------------------------------------------------------------------"
 
     def connection = loginToHac(serverUrl, username, password)
-    def csrfToken = getCsrfToken(slurper.parseText(connection.inputStream.text))
+    def csrfToken = getCsrfToken(new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parseText(connection.inputStream.text))
 
     switch (type) {
         case 'groovy':
@@ -59,9 +57,12 @@ serverList.each { serverUrl ->
         case 'flex':
             executeFlexSearch(serverUrl, csrfToken, script)
             break
-
-        case 'export':
-            executeExport(serverUrl, csrfToken, script)
+        case 'impex':
+            if (script.contains("impex.exportItems")) {
+                executeImpexExport(serverUrl, csrfToken, script)
+            } else {
+                executeImpexImport(serverUrl, csrfToken, script)
+            }
             break
         default:
             println "unknown type $type"
@@ -77,10 +78,7 @@ private void executeGroovy(String serverUrl, String csrfToken, script) {
         writer << "script=" + URLEncoder.encode(script, "UTF-8") + "&scriptType=groovy&commit=false"
     }
 
-    String response = con.inputStream.withReader { Reader reader -> reader.text }
-
-    def jsonSlurper = new JsonSlurper()
-    def json = jsonSlurper.parseText(response)
+    def json = new JsonSlurper().parseText(con.inputStream.withReader { Reader reader -> reader.text })
 
     if (json.executionResult) {
         println "\nExecutionResult\n---------------"
@@ -96,7 +94,6 @@ private void executeGroovy(String serverUrl, String csrfToken, script) {
     }
 }
 
-
 private void executeFlexSearch(String serverUrl, String csrfToken, script) {
 
     def con = getConnection(serverUrl + '/console/flexsearch/execute', csrfToken)
@@ -105,10 +102,7 @@ private void executeFlexSearch(String serverUrl, String csrfToken, script) {
         writer << "flexibleSearchQuery=" + URLEncoder.encode(script, "UTF-8") + "&commit=false"
     }
 
-    String response = con.inputStream.withReader { Reader reader -> reader.text }
-
-    def jsonSlurper = new JsonSlurper()
-    def json = jsonSlurper.parseText(response)
+    def json = new JsonSlurper().parseText(con.inputStream.withReader { Reader reader -> reader.text })
 
     if (json.exception) {
         println "\nException\n---------"
@@ -137,7 +131,7 @@ private void executeFlexSearch(String serverUrl, String csrfToken, script) {
     }
 }
 
-private void executeExport(String serverUrl, String csrfToken, script) {
+private void executeImpexExport(String serverUrl, String csrfToken, script) {
 
     def con = getConnection(serverUrl + '/console/impex/export', csrfToken)
 
@@ -145,11 +139,9 @@ private void executeExport(String serverUrl, String csrfToken, script) {
         writer << "scriptContent=" + URLEncoder.encode(script, "UTF-8") + "&validationEnum=EXPORT_ONLY&encoding=UTF-8"
     }
 
-    String response = con.inputStream.withReader { Reader reader -> reader.text }
+    def xml = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser())
+            .parseText(con.inputStream.withReader { Reader reader -> reader.text })
 
-    def slurper = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser())
-
-    def xml = slurper.parseText(response)
     def error = xml.depthFirst().find { it.@id == 'impexResult' && it['@data-level'] == "error" }
     if (error) {
         println error['@data-result']
@@ -165,6 +157,36 @@ private void executeExport(String serverUrl, String csrfToken, script) {
             }
             println "Result: ${filename}"
         }
+    }
+}
+
+private void executeImpexImport(String serverUrl, String csrfToken, script) {
+
+    def con = getConnection(serverUrl + '/console/impex/import', csrfToken)
+
+    con.outputStream.withWriter { Writer writer ->
+        writer << "scriptContent=" + URLEncoder.encode(script, "UTF-8") +
+                "&validationEnum=IMPORT_STRICT" +
+                "&encoding=UTF-8" +
+                "&_legacyMode=on" +
+                "&maxThreads=16" +
+                "&enableCodeExecution=true" +
+                "&_enableCodeExecution=on" +
+                "&_distributedMode=on" +
+                "&_sldEnabled=on"
+    }
+
+    String response = con.inputStream.withReader { Reader reader -> reader.text }
+
+    def slurper = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser())
+
+    def xml = slurper.parseText(response)
+    def error = xml.depthFirst().find { it.@id == 'impexResult' && it['@data-level'] == "error" }
+    if (error) {
+        println error['@data-result']
+        println xml.depthFirst().find { it.@class == 'box impexResult quiet' }.children()
+    } else {
+        println xml.depthFirst().find { it.@id == 'impexResult' && it['@data-level'] == "notice" }.'@data-result'
     }
 }
 
@@ -198,7 +220,7 @@ private def getType(OptionAccessor options) {
         } else if (file.name.toLowerCase().endsWith('.flex')) {
             return 'flex'
         } else if (file.name.toLowerCase().endsWith('.impex')) {
-            return 'export'
+            return 'impex'
         } else {
             println "Unkown file ending for file ${file.name}"
         }
@@ -207,18 +229,14 @@ private def getType(OptionAccessor options) {
 
 /**
  * <meta name="_csrf" content="4fed96a3-8267-4449-8d85-76036b1a53c2" />
- * @return the token string
  */
 private String getCsrfToken(GPathResult htmlParser) {
-    assert htmlParser instanceof groovy.util.slurpersupport.GPathResult
-    //print htmlParser.head.meta[3].@name
     return htmlParser.head.'*'.findAll { node ->
         node.@name == '_csrf'
     }.@content
 }
 
 private def loginToHac(String serverUrl, username, password) {
-
     def connection = new URL(serverUrl).openConnection() as HttpURLConnection
     // set some headers
     connection.setRequestProperty('Authorization', 'Basic ' + "${username}:${password}".getBytes('iso-8859-1').encodeBase64())
