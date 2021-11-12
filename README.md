@@ -10,7 +10,7 @@ Command Line Interface for hybris Administrator Console
 
 ## Tested with hybris version
 
-* 4.8.11
+* 2011.8
 
 # Usage
 ## Groovy
@@ -42,7 +42,7 @@ Command Line Interface for hybris Administrator Console
     124    9014067975342480 23087816810119820               2000-08-08 17:37:17.594 0     2015-12-23 10:34:35.814 0      1          de      
     33     9014067975342624 23087816810119820               2000-08-08 17:37:17.602 0     2015-12-23 10:34:35.864 0      1          en      
 ```
-## ImpEx (Export)
+## ImpEx (Export) (script file contains string "impex.exportItems")
 ```
     hac local test/test.impex
 ```
@@ -52,6 +52,17 @@ Command Line Interface for hybris Administrator Console
     -------------------------------------------------------------------------------
     Result: dataexport_0000NHJ9.zip
 ```
+## ImpEx (Import)
+```
+    hac local test/test.impex
+```
+```
+    -------------------------------------------------------------------------------
+    https://my-server
+    -------------------------------------------------------------------------------
+    Import finished successfully
+```
+
 ## Piping
 ```
     cat test/test.flex | hac local --type flex
@@ -80,13 +91,7 @@ Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
     https://github.com/neuland/hac.git
 ```
 
-Run ./setup.sh to set up the system: (only run `./setup.sh`, _don't use_ `sudo ./setup.sh`, that would use root's home directory!)
- - a .hac directory will be created in your home dir
- - there will be links set up in that directory to the files in the checkout out repository
- - there will be a link set up in /usr/local/bin
- - there will be a link for the bash completion under /etc/bash_completion.d/
-
-The last two actions need root access, so the setup script will use 'sudo'.
-Please have a look at the script _before running it_ to make sure that nothing bad will happen ;)
-
-Edit the `~/.hac/config.json` file to match your system configuration.
+* Checkout code
+* Copy the hac/src/hac.sh into you bin folder
+* Edit hac.sh in bin folder and modify the file locations of hac.groovy and config.json
+* change config.json with your settings

@@ -5,11 +5,14 @@ import groovy.util.slurpersupport.GPathResult
 
 import javax.net.ssl.*
 import java.security.SecureRandom
+import java.nio.file.Path
+import java.nio.file.Paths
 
 def cli = new CliBuilder(usage: "${this.class.name}.groovy --env <live> -f <my-script.groovy>")
 cli.with {
     h longOpt: 'help', 'Show usage information'
     e longOpt: 'env', args: 1, argName: 'env', required: true, 'enviroment'
+    c longOpt: 'configfile', args: 1, argName: 'configfile', required: true, 'configfile'
     i longOpt: 'file', args: 1, argName: 'file', required: false, 'file containing the script'
     t longOpt: 'type', args: 1, argName: 'type', required: false, 'specify the input type [groovy|flex]'
 }
@@ -21,7 +24,13 @@ if (options == null) {
     return
 }
 
-def config = new JsonSlurper().parse(new File('src/config.json').toURI().toURL())
+if (!options.i && !options.t) {
+    println "Please provide file type or file. You must provide a file type if you try to read from stdin."
+    return
+}
+
+// location of 'config.json'
+def config = new JsonSlurper().parse(new File( options.c))
 
 def serverList = getServerList(config, options)
 def script = getScript(options)
@@ -48,7 +57,8 @@ serverList.each { serverUrl ->
     println "-------------------------------------------------------------------------------"
 
     def connection = loginToHac(serverUrl, username, password)
-    def csrfToken = getCsrfToken(new XmlSlurper(new org.ccil.cowan.tagsoup.Parser()).parseText(connection.inputStream.text))
+    def csrfToken = getCsrfToken(new XmlSlurper(new org.ccil.cowan.tagsoup.Parser())
+            .parseText(connection.inputStream.text))
 
     switch (type) {
         case 'groovy':
@@ -207,7 +217,12 @@ private def getServerList(config, options) {
 }
 
 private def getScript(OptionAccessor options) {
-    new File(options.file).text
+    // read from stdin if from file
+    if (!options.file || options.file == '-') {
+        return System.in.text
+    } else {
+        return new File(options.file).text
+    }
 }
 
 private def getType(OptionAccessor options) {
