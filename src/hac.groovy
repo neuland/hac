@@ -116,7 +116,7 @@ private void executeFlexSearch(String serverUrl, String csrfToken, script) {
 
     if (json.exception) {
         println "\nException\n---------"
-        println json.exception
+        println json.exception.message
     }
 
     println "Execution time: ${json.executionTime}ms"
