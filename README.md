@@ -74,6 +74,19 @@ Command Line Interface for hybris Administrator Console
     cat test/test.impex | hac local --type impex
 ```
 
+
+## Configuration
+
+Add your target server at: config.json
+You have several options for providing a password.
+
+1) Type it into "password": "nimda" --> insecure. Useful for local development systems.
+2) Provide a password from console if at config.json is no password specified.
+3) Read password from stdin. Type into "password": "-" (a dash).
+try: echo -n "nimda" | hac.sh -e local -t flex -i test/test.flex
+or better: secret-tool lookup username <aUserName> | hac.sh -e local -t flex -i test/test.flex
+
+
 # Installation
 ## Dependencies for execution
  - groovy (http://groovy-lang.org/) min. Version 2.4.7

@@ -8,6 +8,8 @@ import java.security.SecureRandom
 import java.nio.file.Path
 import java.nio.file.Paths
 
+println System.properties.grep ({it.key.contains("proxy")})
+
 def cli = new CliBuilder(usage: "${this.class.name}.groovy --env <live> -f <my-script.groovy>")
 cli.with {
     h longOpt: 'help', 'Show usage information'
@@ -205,6 +207,13 @@ private def getUsername(config, options) {
 }
 
 private def getPassword(config, options) {
+ 
+    // if config file contains for password "-" -> read password from stdin
+    if (config[options.env].password && config[options.env].password == '-') {
+        println "Expect password from stdin"
+        return System.in.text
+    }
+
     if (config[options.env].password) {
         return config[options.env].password
     } else {
@@ -217,7 +226,7 @@ private def getServerList(config, options) {
 }
 
 private def getScript(OptionAccessor options) {
-    // read from stdin if from file
+    // read from stdin or from file
     if (!options.file || options.file == '-') {
         return System.in.text
     } else {
