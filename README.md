@@ -10,7 +10,7 @@ Command Line Interface for hybris Administrator Console
 
 ## Tested with hybris version
 
-* 2011.8
+* 2205.0
 
 # Usage
 ## Groovy
@@ -86,6 +86,26 @@ You have several options for providing a password.
 try: echo -n "nimda" | hac.sh -e local -t flex -i test/test.flex
 or better: secret-tool lookup username <aUserName> | hac.sh -e local -t flex -i test/test.flex
 
+## store the password securely
+
+-- not required, daemon is already started
+1. Create the keyring manually with a dummy password in stdin
+eval "$(printf '\n' | gnome-keyring-daemon --unlock)"
+
+2. Start the daemon, using the password to unlock the just-created keyring:
+eval "$(printf '\n' | /usr/bin/gnome-keyring-daemon --start)"
+
+
+secret-tool lookup foo bar
+printf "aPassword" | secret-tool store --label="test" foo bar
+secret-tool search --all foo bar
+secret-tool clear foo bar
+
+use with
+secret-tool lookup system test | hac.sh .. other parameter
+
+HINT: configure in config.json in "password" a dash "-"
+
 
 # Installation
 ## Dependencies for execution
@@ -98,6 +118,21 @@ or better: secret-tool lookup username <aUserName> | hac.sh -e local -t flex -i 
 
 If you are using a mac, please make sure that you have 'bash-completion' installed.
 Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
+
+## use hac with proxy
+
+I have a wrapper script hac-proxy.sh
+```
+#!/usr/bin/env bash
+# copy the hac-proxy.sh into your bin folder and change correct location of hac.groovy and config.json
+
+echo "execute with $@"
+
+export http_proxy=http://<proxy host>:3128
+groovy -Djava.net.useSystemProxies=true ~/git/github/hac/src/hac.groovy --configfile ~/git/github/hac/src/config.json $@
+
+```
+
 
 ## Steps to do
 ```
