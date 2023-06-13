@@ -10,7 +10,7 @@ Command Line Interface for hybris Administrator Console
 
 ## Tested with hybris version
 
-* 4.8.11
+* 2205.0
 
 # Usage
 ## Groovy
@@ -42,7 +42,7 @@ Command Line Interface for hybris Administrator Console
     124    9014067975342480 23087816810119820               2000-08-08 17:37:17.594 0     2015-12-23 10:34:35.814 0      1          de      
     33     9014067975342624 23087816810119820               2000-08-08 17:37:17.602 0     2015-12-23 10:34:35.864 0      1          en      
 ```
-## ImpEx (Export)
+## ImpEx (Export) (script file contains string "impex.exportItems")
 ```
     hac local test/test.impex
 ```
@@ -52,6 +52,17 @@ Command Line Interface for hybris Administrator Console
     -------------------------------------------------------------------------------
     Result: dataexport_0000NHJ9.zip
 ```
+## ImpEx (Import)
+```
+    hac local test/test.impex
+```
+```
+    -------------------------------------------------------------------------------
+    https://my-server
+    -------------------------------------------------------------------------------
+    Import finished successfully
+```
+
 ## Piping
 ```
     cat test/test.flex | hac local --type flex
@@ -62,6 +73,39 @@ Command Line Interface for hybris Administrator Console
 ```
     cat test/test.impex | hac local --type impex
 ```
+
+
+## Configuration
+
+Add your target server at: config.json
+You have several options for providing a password.
+
+1) Type it into "password": "nimda" --> insecure. Useful for local development systems.
+2) Provide a password from console if at config.json is no password specified.
+3) Read password from stdin. Type into "password": "-" (a dash).
+try: echo -n "nimda" | hac.sh -e local -t flex -i test/test.flex
+or better: secret-tool lookup username <aUserName> | hac.sh -e local -t flex -i test/test.flex
+
+## store the password securely
+
+-- not required, daemon is already started
+1. Create the keyring manually with a dummy password in stdin
+eval "$(printf '\n' | gnome-keyring-daemon --unlock)"
+
+2. Start the daemon, using the password to unlock the just-created keyring:
+eval "$(printf '\n' | /usr/bin/gnome-keyring-daemon --start)"
+
+
+secret-tool lookup foo bar
+printf "aPassword" | secret-tool store --label="test" foo bar
+secret-tool search --all foo bar
+secret-tool clear foo bar
+
+use with
+secret-tool lookup system test | hac.sh .. other parameter
+
+HINT: configure in config.json in "password" a dash "-"
+
 
 # Installation
 ## Dependencies for execution
@@ -75,18 +119,27 @@ Command Line Interface for hybris Administrator Console
 If you are using a mac, please make sure that you have 'bash-completion' installed.
 Configure the COMPLETION_DIR path in 'setup.sh' accordingly.
 
+## use hac with proxy
+
+I have a wrapper script hac-proxy.sh
+```
+#!/usr/bin/env bash
+# copy the hac-proxy.sh into your bin folder and change correct location of hac.groovy and config.json
+
+echo "execute with $@"
+
+export http_proxy=http://<proxy host>:3128
+groovy -Djava.net.useSystemProxies=true ~/git/github/hac/src/hac.groovy --configfile ~/git/github/hac/src/config.json $@
+
+```
+
+
 ## Steps to do
 ```
     https://github.com/neuland/hac.git
 ```
 
-Run ./setup.sh to set up the system: (only run `./setup.sh`, _don't use_ `sudo ./setup.sh`, that would use root's home directory!)
- - a .hac directory will be created in your home dir
- - there will be links set up in that directory to the files in the checkout out repository
- - there will be a link set up in /usr/local/bin
- - there will be a link for the bash completion under /etc/bash_completion.d/
-
-The last two actions need root access, so the setup script will use 'sudo'.
-Please have a look at the script _before running it_ to make sure that nothing bad will happen ;)
-
-Edit the `~/.hac/config.json` file to match your system configuration.
+* Checkout code
+* Copy the hac/src/hac.sh into you bin folder
+* Edit hac.sh in bin folder and modify the file locations of hac.groovy and config.json
+* change config.json with your settings

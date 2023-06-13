@@ -1,0 +1,9 @@
+$productCatalog = default
+$productCatalogVersion = catalogversion(catalog(id[default=$productCatalog]), version[default='Staged'])[unique=true, default=$productCatalog:Staged]
+$superCategories = supercategories(code, $productCatalogVersion)
+
+$approved = approvalstatus(code)[default='approved']
+
+INSERT_UPDATE Product; code[unique = true] ; name[lang = en]; unit(code)[default=pieces]; $productCatalogVersion; $approved 
+;testproduct3;dasdsad
+

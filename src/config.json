@@ -1,9 +1,9 @@
 {
   "local": {
     "username": "admin",
-    "password": "admin",
+    "password": "nimda",
     "server": [
-      "http://localhost:9001"
+      "https://localhost:9002/hac"
     ]
   },
   "dev": {
